@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Company Chatbot</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+    }
+
+    header {
+      background: #e53935;
+      color: white;
+      padding: 30px;
+      text-align: center;
+      font-size: 36px;
+    }
+
+    #popupForm {
+      display: none; /* Initially hidden */
+      position: fixed;
+      top: 25%;
+      left: 35%;
+      width: 30%;
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+      z-index: 1001;
+      transform: translate(-50%, -50%); /* Centering adjustment */
+      left: 50%; /* Adjusted for centering */
+      top: 50%; /* Adjusted for centering */
+    }
+
+    #popupForm h3 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    #popupForm input,
+    #popupForm textarea {
+      width: calc(100% - 20px); /* Adjusting for padding */
+      margin-bottom: 15px;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    #popupForm textarea {
+      resize: vertical; /* Allow vertical resizing */
+      min-height: 80px;
+    }
+
+    #popupForm button {
+      background-color: #8B0A0A;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #popupForm button:hover {
+      background-color: #00327a;
+    }
+
+    .close-button {
+      float: right;
+      background: none;
+      border: none;
+      font-size: 24px; /* Larger for better clickability */
+      cursor: pointer;
+      color: #aaa;
+      transition: color 0.2s ease;
+    }
+
+    .close-button:hover {
+      color: #555;
+    }
+
+    .test-para {
+      white-space: pre-wrap;
+      background: #fff;
+      padding: 15px;
+      margin: 20px;
+      border: 1px solid #ccc;
+      min-height: 150px;
+      font-size: 14px;
+      overflow-y: auto;
+      max-height: 300px;
+      border-radius: 8px; /* Slightly rounded corners */
+    }
+
+    /* Styles for the Dialogflow Messenger iframe to ensure it's visible */
+    df-messenger {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 1000;
+      --df-messenger-button-titlebar-color: #8B0A0A; /* Matches your brand color */
+      --df-messenger-chat-background-color: #f0f2f5;
+      --df-messenger-font-color: #333;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="attached_assets/Screenshot 2025-06-26 184020_1750943447997.png" alt="Expeed Software" style="height: 120px; max-width: 600px; object-fit: contain;" />
+  </header>
+
+  
+
+  <div id="faqSection" style="max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <h2 style="color: #8B0A0A; margin-bottom: 20px;">Frequently Asked Questions</h2>
+    
+    <div id="faqResults" style="margin-top: 20px;">
+      <h4 style="color: #666; margin-bottom: 15px;">Popular Questions:</h4>
+      <div id="popularFAQs"></div>
+    </div>
+  </div>
+
+  <div id="popupForm">
+    <button onclick="closeForm()" class="close-button">&times;</button>
+    <h3>Schedule a Consultation</h3>
+    <input type="email" id="email" placeholder="Your Email" required />
+    <input type="text" id="phone" placeholder="Your Phone Number" required />
+    <textarea id="problem" placeholder="Describe your issue" required></textarea>
+    <button onclick="submitForm()">Submit</button>
+  </div>
+
+  <df-messenger
+    intent="WELCOME"
+    chat-title="Chatbot"
+    agent-id="4e1b547f-c7b3-4b78-858f-110848e34576"
+    language-code="en"
+    class="df-messenger"
+  ></df-messenger>
+
+  <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
+
+  <script>
+    function submitForm() {
+      const email = document.getElementById("email").value;
+      const phone = document.getElementById("phone").value;
+      const problem = document.getElementById("problem").value;
+
+      if (!email || !phone || !problem) {
+        alert("Please fill in all fields before submitting.");
+        return;
+      }
+
+      alert("Form submitted!\n\nEmail: " + email + "\nPhone: " + phone + "\nProblem: " + problem);
+      
+      // Clear form
+      document.getElementById("email").value = '';
+      document.getElementById("phone").value = '';
+      document.getElementById("problem").value = '';
+      
+      document.getElementById("popupForm").style.display = "none";
+    }
+
+    function closeForm() {
+      document.getElementById("popupForm").style.display = "none";
+    }
+
+    function showForm() {
+      document.getElementById("popupForm").style.display = "block";
+    }
+
+    // FAQ Database
+    const faqDatabase = [
+      {
+        question: "What services do you offer?",
+        answer: "We offer comprehensive business consulting, digital transformation, process optimization, and strategic planning services.",
+        keywords: ["services", "offer", "what", "do", "consulting", "business", "digital"]
+      },
+      {
+        question: "How much do consultations cost?",
+        answer: "Our consultation rates vary based on the scope and complexity. Contact us for a personalized quote.",
+        keywords: ["cost", "price", "consultation", "fee", "charge", "rate", "money", "expensive"]
+      },
+      {
+        question: "How long does a typical project take?",
+        answer: "Project timelines depend on scope, but most projects range from 2-12 weeks. We'll provide a detailed timeline during consultation.",
+        keywords: ["time", "long", "duration", "project", "timeline", "weeks", "months"]
+      },
+      {
+        question: "Do you work with small businesses?",
+        answer: "Yes! We work with businesses of all sizes, from startups to enterprise companies.",
+        keywords: ["small", "business", "startup", "company", "size", "enterprise"]
+      },
+      {
+        question: "What industries do you specialize in?",
+        answer: "We have expertise across multiple industries including technology, healthcare, finance, retail, and manufacturing.",
+        keywords: ["industry", "specialize", "technology", "healthcare", "finance", "retail", "manufacturing"]
+      },
+      {
+        question: "Can you help with digital transformation?",
+        answer: "Absolutely! Digital transformation is one of our core specialties. We help businesses modernize their processes and technology.",
+        keywords: ["digital", "transformation", "modernize", "technology", "process", "automation"]
+      },
+      {
+        question: "Do you offer remote consultations?",
+        answer: "Yes, we offer both in-person and remote consultations via video conferencing to accommodate your preferences.",
+        keywords: ["remote", "online", "video", "virtual", "conference", "zoom", "meeting"]
+      },
+      {
+        question: "How do I get started?",
+        answer: "Simply schedule a consultation using our form or chatbot. We'll discuss your needs and create a customized plan.",
+        keywords: ["start", "begin", "get started", "first step", "initial", "schedule"]
+      },
+      {
+        question: "What makes your consulting different?",
+        answer: "Our data-driven approach, industry expertise, and focus on measurable results set us apart from other consulting firms.",
+        keywords: ["different", "unique", "special", "why", "choose", "advantage", "better"]
+      },
+      {
+        question: "Do you provide ongoing support?",
+        answer: "Yes, we offer various support packages to ensure successful implementation and continued optimization of our solutions.",
+        keywords: ["support", "ongoing", "maintenance", "follow-up", "after", "implementation"]
+      }
+    ];
+
+    function suggestFAQs(searchTerm) {
+      const suggestionsList = document.getElementById('suggestionsList');
+      const suggestionsContainer = document.getElementById('faqSuggestions');
+      
+      if (!searchTerm || searchTerm.length < 2) {
+        suggestionsContainer.style.display = 'none';
+        showPopularFAQs();
+        return;
+      }
+
+      const matches = findMatchingFAQs(searchTerm.toLowerCase());
+      
+      if (matches.length > 0) {
+        suggestionsContainer.style.display = 'block';
+        suggestionsList.innerHTML = '';
+        
+        matches.slice(0, 5).forEach(faq => {
+          const faqItem = createFAQItem(faq, true);
+          suggestionsList.appendChild(faqItem);
+        });
+      } else {
+        suggestionsContainer.style.display = 'none';
+      }
+    }
+
+    function findMatchingFAQs(searchTerm) {
+      const matches = [];
+      
+      faqDatabase.forEach(faq => {
+        let score = 0;
+        const words = searchTerm.split(' ').filter(word => word.length > 1);
+        
+        words.forEach(word => {
+          // Check if word exists in keywords
+          if (faq.keywords.some(keyword => keyword.includes(word))) {
+            score += 3;
+          }
+          // Check if word exists in question
+          if (faq.question.toLowerCase().includes(word)) {
+            score += 2;
+          }
+          // Check if word exists in answer
+          if (faq.answer.toLowerCase().includes(word)) {
+            score += 1;
+          }
+        });
+        
+        if (score > 0) {
+          matches.push({ ...faq, score });
+        }
+      });
+      
+      return matches.sort((a, b) => b.score - a.score);
+    }
+
+    function createFAQItem(faq, isCollapsible = true) {
+      const faqItem = document.createElement('div');
+      faqItem.style.cssText = `
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+      `;
+      
+      const question = document.createElement('div');
+      question.style.cssText = `
+        padding: 15px;
+        background: #f8f9fa;
+        cursor: ${isCollapsible ? 'pointer' : 'default'};
+        font-weight: 600;
+        color: #333;
+        border-bottom: 1px solid #ddd;
+      `;
+      question.textContent = faq.question;
+      
+      const answer = document.createElement('div');
+      answer.style.cssText = `
+        padding: 15px;
+        background: white;
+        color: #666;
+        line-height: 1.6;
+        ${isCollapsible ? 'display: none;' : ''}
+      `;
+      answer.textContent = faq.answer;
+      
+      if (isCollapsible) {
+        question.onclick = () => {
+          const isVisible = answer.style.display === 'block';
+          answer.style.display = isVisible ? 'none' : 'block';
+          faqItem.style.boxShadow = isVisible ? 'none' : '0 2px 8px rgba(0,0,0,0.1)';
+        };
+        
+        question.onmouseover = () => {
+          question.style.backgroundColor = '#e9ecef';
+        };
+        
+        question.onmouseout = () => {
+          question.style.backgroundColor = '#f8f9fa';
+        };
+      }
+      
+      faqItem.appendChild(question);
+      faqItem.appendChild(answer);
+      
+      return faqItem;
+    }
+
+    function showPopularFAQs() {
+      const popularContainer = document.getElementById('popularFAQs');
+      popularContainer.innerHTML = '';
+      
+      // Show top 3 popular FAQs
+      const popularFAQs = faqDatabase.slice(0, 3);
+      
+      popularFAQs.forEach(faq => {
+        const faqItem = createFAQItem(faq, true);
+        popularContainer.appendChild(faqItem);
+      });
+    }
+
+    // Initialize popular FAQs on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      showPopularFAQs();
+    });
+
+    window.addEventListener('df-custom-event', function(event) {
+      const detail = event.detail;
+      if (!detail) return;
+
+      if (detail.name === 'inject_style' && detail.parameters?.css) {
+        const styleTag = document.createElement('style');
+        styleTag.innerHTML = detail.parameters.css;
+        document.head.appendChild(styleTag);
+      }
+      
+      // Handle consultation request from chatbot
+      if (detail.name === 'show_consultation_form') {
+        showForm();
+      }
+    });
+
+    // Listen for user messages to detect consultation requests
+    window.addEventListener('df-user-input-entered', function(event) {
+      const userInput = event.detail.input;
+      if (userInput) {
+        const text = userInput.toLowerCase();
+        const consultationKeywords = [
+          'consultation', 'schedule', 'appointment', 'meeting', 
+          'book', 'call', 'talk', 'help', 'contact', 'speak'
+        ];
+        
+        // Check if user message contains consultation-related keywords
+        if (consultationKeywords.some(keyword => text.includes(keyword))) {
+          setTimeout(() => {
+            showForm();
+          }, 2000); // Delay to let the bot respond first
+        }
+      }
+    });
+
+    // Also listen for chatbot responses to handle specific intents
+    window.addEventListener('df-response-received', function(event) {
+      const response = event.detail;
+      if (response && response.queryResult) {
+        const intent = response.queryResult.intent;
+        
+        // Check if specific consultation intent was triggered
+        if (intent && (
+          intent.displayName === 'consultation.request' ||
+          intent.displayName === 'schedule.consultation'
+        )) {
+          setTimeout(() => {
+            showForm();
+          }, 1000);
+        }
+      }
+    });
+  </script>
+
+
+</body>
+</html>
